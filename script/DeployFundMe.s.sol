@@ -6,7 +6,7 @@ import {Script} from "forge-std/Script.sol";
 import {FundMe} from "../src/FundMe.sol";
 
 contract DeployFundMe is Script {
-     function run() external {
+    function run() external {
         //by this line we like say: Everything that is after this line should be sent to an RPC
         vm.startBroadcast();
         //`new` creates new contract

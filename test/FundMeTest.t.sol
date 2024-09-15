@@ -6,8 +6,9 @@ import {Test, console} from "forge-std/Test.sol";
 import {FundMe} from "../src/FundMe.sol";
 
 contract FundMeTest is Test {
-     FundMe fundMe;
+    FundMe fundMe;
     //this function is responsible for deploying contract
+
     function setUp() external {
         //us are calling -> FundMeTest deployes -> FundMe
         fundMe = new FundMe();
@@ -18,6 +19,6 @@ contract FundMeTest is Test {
     }
 
     function testOwnerIsMsgSender() public {
-        assertEq(fundMe.i_owner(),address(this));
+        assertEq(fundMe.i_owner(), address(this));
     }
 }
