@@ -29,6 +29,7 @@ contract FundMe {
     }
 
     function getVersion() public view returns (uint256) {
+        //for now it is hardcoded value - only for sepolia
         AggregatorV3Interface priceFeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         return priceFeed.version();
     }
