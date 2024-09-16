@@ -18,7 +18,7 @@ contract DeployFundMe is Script {
         //`new` creates new contract
         //by this approach msg.sender is the deployer of the contract
         //Mock
-        FundMe fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
+        FundMe fundMe = new FundMe(ethUsdPriceFeed);
         vm.stopBroadcast();
         return fundMe;
     }
