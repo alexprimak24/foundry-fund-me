@@ -3,13 +3,14 @@
 pragma solidity ^0.8.18;
 
 import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../src/FundMe.sol";
-import {DeployFundMe} from "../script/DeployFundMe.s.sol";
+import {FundMe} from "../../src/FundMe.sol";
+import {DeployFundMe} from "../../../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundMe;
 
     address USER = makeAddr("user");
+    uint256 constant GAS_PRICE = 1;
     uint256 constant SEND_VALUE = 0.1 ether;
     uint256 constant STARTING_BALANCE = 10 ether;
     //this function is responsible for deploying contract
@@ -123,9 +124,53 @@ contract FundMeTest is Test {
         uint256 startingFundMeBalance = address(fundMe).balance;
 
         // Act
-        vm.startPrank(fundMe.getOwner());
-        fundMe.withdraw();
+        // the way how to check out how much gas we spent
+        uint256 gasStart = gasleft(); //let's pretend we sent 1000 gas
+        vm.txGasPrice(GAS_PRICE);
+        vm.startPrank(fundMe.getOwner()); // we used 200 gas
+        fundMe.withdraw();// we should have spent gas right?
+        //the thing is if we are working with Anvil chain - gas price default to 0
+        //so that the Assert below works just fine
         vm.stopPrank();
+
+        uint256 gasEnd = gasleft(); //left 800 gas
+        uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        console.log(gasUsed);
+
+        //Assert
+        assert(address(fundMe).balance == 0);
+        assert(startingFundMeBalance + startingOwnerBalance == fundMe.getOwner().balance);
+    }
+    function testWithdrawWithMultipleFundersCheaper() public funded {
+        //Arrange
+        uint160 numberOfFunders = 10;
+        uint160 startingFunderIndex = 1;
+        for (uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
+            //vm.prank new address
+            //vm.deal new address
+            // address()
+            //we are creating a black address and send some funds into it
+            hoax(address(i), SEND_VALUE);
+            fundMe.fund{value: SEND_VALUE}();
+            // fund the fundMe
+        }
+
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMeBalance = address(fundMe).balance;
+
+        // Act
+        // the way how to check out how much gas we spent
+        uint256 gasStart = gasleft(); //let's pretend we sent 1000 gas
+        vm.txGasPrice(GAS_PRICE);
+        vm.startPrank(fundMe.getOwner()); // we used 200 gas
+        fundMe.cheaperWithdraw();// we should have spent gas right?
+        //the thing is if we are working with Anvil chain - gas price default to 0
+        //so that the Assert below works just fine
+        vm.stopPrank();
+
+        uint256 gasEnd = gasleft(); //left 800 gas
+        uint256 gasUsed = (gasStart - gasEnd) * tx.gasprice;
+        console.log(gasUsed);
 
         //Assert
         assert(address(fundMe).balance == 0);
