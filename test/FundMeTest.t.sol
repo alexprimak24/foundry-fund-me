@@ -8,6 +8,10 @@ import {DeployFundMe} from "../script/DeployFundMe.s.sol";
 
 contract FundMeTest is Test {
     FundMe fundMe;
+
+    address USER = makeAddr("user");
+    uint256 constant SEND_VALUE = 0.1 ether;
+    uint256 constant STARTING_BALANCE = 10 ether;
     //this function is responsible for deploying contract
 
     function setUp() external {
@@ -15,6 +19,8 @@ contract FundMeTest is Test {
         // fundMe = new FundMe(0x694AA1769357215DE4FAC081bf1f309aDC325306);
         DeployFundMe deployFundMe = new DeployFundMe();
         fundMe = deployFundMe.run();
+        //there we are sending some fake ether to out fake user
+        vm.deal(USER,STARTING_BALANCE);
     }
 
     function testMinumumDollarIsFive() public {
@@ -22,7 +28,7 @@ contract FundMeTest is Test {
     }
 
     function testOwnerIsMsgSender() public {
-        assertEq(fundMe.i_owner(), msg.sender);
+        assertEq(fundMe.getOwner(), msg.sender);
     }
     // What can we do to work with addresses outside our system?
     // 1. Unit
@@ -38,4 +44,94 @@ contract FundMeTest is Test {
         uint256 version = fundMe.getVersion();
         assertEq(version,4);
     }
+
+    function testFundFailsWithoutEnoughETH() public {
+        vm.expectRevert(); //it says that the next code should fainl
+        // something like assert(this tx fails/reverts)
+        fundMe.fund(); //send 0 value
+    }
+
+    function testFundUpdatesFundedDataStructure() public {
+        //there we are assuming that the next tsx will be sent by that user
+        vm.prank(USER); //The next TX will be sent by USER
+        // there our contract calls the function fundMe
+        fundMe.fund{value: SEND_VALUE}();
+
+        //there we get an amount that out contract funded to FundMe
+        uint256 amountFunded = fundMe.getAddressToAmountFunded(USER);
+        assertEq(amountFunded, SEND_VALUE);
+    }
+
+    function testAddsFunderToArrayOfFunders() public {
+        vm.prank(USER);
+        fundMe.fund{value: SEND_VALUE}();
+
+        address funder = fundMe.getFunder(0);
+
+        assertEq(funder, USER);
+    }
+
+    //so as I will progress I will write really complex tests and to make my tests more
+    //readable and better structures, the best practise is to just use modifiers.
+    modifier funded() {
+        //there we are funding our FundMe from USER
+        vm.prank(USER);
+        fundMe.fund{value: SEND_VALUE}();
+        _;
+    }
+
+    function testOnlyOwnerCanWithdraw() public funded {
+        //then we expect that the call will be reverted
+        vm.expectRevert();
+        //we are trying to call withdraw function from USER
+        vm.prank(USER);
+        fundMe.withdraw();
+
+        //so consiquently it will revert as USER != Owner
+    }
+
+    function testWithdrawWithASingleFunder() public funded {
+        //so in tests you usually arrange something (funding contract for example)
+        //Arrange
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMeBalance = address(fundMe).balance;
+        //Act
+        vm.prank(fundMe.getOwner());
+        fundMe.withdraw();
+        //Assert
+        uint256 endingOwnerBalance = fundMe.getOwner().balance;
+        uint256 endingFundMeBalance = address(fundMe).balance;
+        assertEq(startingOwnerBalance + startingFundMeBalance, endingOwnerBalance);
+        assertEq(endingFundMeBalance, 0);
+    }
+
+    function testWithdrawWithMultipleFunders() public funded {
+        //Arrange
+        uint160 numberOfFunders = 10;
+        uint160 startingFunderIndex = 1;
+        for(uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
+            //vm.prank new address
+            //vm.deal new address
+            // address()
+            //we are creating a black address and send some funds into it
+            hoax(address(i), SEND_VALUE);
+            fundMe.fund{value:SEND_VALUE}();
+            // fund the fundMe
+        }
+
+        uint256 startingOwnerBalance = fundMe.getOwner().balance;
+        uint256 startingFundMeBalance = address(fundMe).balance;
+
+        // Act
+        vm.startPrank(fundMe.getOwner());
+        fundMe.withdraw();
+        vm.stopPrank();
+
+        //Assert
+        assert(address(fundMe).balance == 0);
+        assert(startingFundMeBalance + startingOwnerBalance == fundMe.getOwner().balance);
+    }
+
+
+
 }
