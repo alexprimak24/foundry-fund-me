@@ -28,7 +28,7 @@ contract MockV3Aggregator is AggregatorV3Interface {
         updateAnswer(_initialAnswer);
     }
 
-    function getVersion() public returns(uint256){
+    function getVersion() public returns (uint256) {
         return version;
     }
 

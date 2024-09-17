@@ -20,7 +20,7 @@ contract FundMeTest is Test {
         DeployFundMe deployFundMe = new DeployFundMe();
         fundMe = deployFundMe.run();
         //there we are sending some fake ether to out fake user
-        vm.deal(USER,STARTING_BALANCE);
+        vm.deal(USER, STARTING_BALANCE);
     }
 
     function testMinumumDollarIsFive() public {
@@ -42,7 +42,7 @@ contract FundMeTest is Test {
 
     function testPriceFeedVersionIsAccurate() public {
         uint256 version = fundMe.getVersion();
-        assertEq(version,4);
+        assertEq(version, 4);
     }
 
     function testFundFailsWithoutEnoughETH() public {
@@ -109,13 +109,13 @@ contract FundMeTest is Test {
         //Arrange
         uint160 numberOfFunders = 10;
         uint160 startingFunderIndex = 1;
-        for(uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
+        for (uint160 i = startingFunderIndex; i < numberOfFunders; i++) {
             //vm.prank new address
             //vm.deal new address
             // address()
             //we are creating a black address and send some funds into it
             hoax(address(i), SEND_VALUE);
-            fundMe.fund{value:SEND_VALUE}();
+            fundMe.fund{value: SEND_VALUE}();
             // fund the fundMe
         }
 
@@ -131,7 +131,4 @@ contract FundMeTest is Test {
         assert(address(fundMe).balance == 0);
         assert(startingFundMeBalance + startingOwnerBalance == fundMe.getOwner().balance);
     }
-
-
-
 }
