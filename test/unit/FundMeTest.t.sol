@@ -128,7 +128,7 @@ contract FundMeTest is Test {
         uint256 gasStart = gasleft(); //let's pretend we sent 1000 gas
         vm.txGasPrice(GAS_PRICE);
         vm.startPrank(fundMe.getOwner()); // we used 200 gas
-        fundMe.withdraw();// we should have spent gas right?
+        fundMe.withdraw(); // we should have spent gas right?
         //the thing is if we are working with Anvil chain - gas price default to 0
         //so that the Assert below works just fine
         vm.stopPrank();
@@ -141,6 +141,7 @@ contract FundMeTest is Test {
         assert(address(fundMe).balance == 0);
         assert(startingFundMeBalance + startingOwnerBalance == fundMe.getOwner().balance);
     }
+
     function testWithdrawWithMultipleFundersCheaper() public funded {
         //Arrange
         uint160 numberOfFunders = 10;
@@ -163,7 +164,7 @@ contract FundMeTest is Test {
         uint256 gasStart = gasleft(); //let's pretend we sent 1000 gas
         vm.txGasPrice(GAS_PRICE);
         vm.startPrank(fundMe.getOwner()); // we used 200 gas
-        fundMe.cheaperWithdraw();// we should have spent gas right?
+        fundMe.cheaperWithdraw(); // we should have spent gas right?
         //the thing is if we are working with Anvil chain - gas price default to 0
         //so that the Assert below works just fine
         vm.stopPrank();
