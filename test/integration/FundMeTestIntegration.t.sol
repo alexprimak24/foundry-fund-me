@@ -1,39 +1,45 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity 0.8.19;
 
-import {Test, console} from "forge-std/Test.sol";
-import {FundMe} from "../../src/FundMe.sol";
-import {DeployFundMe} from "../../../script/DeployFundMe.s.sol";
+import {DeployFundMe} from "../../script/DeployFundMe.s.sol";
 import {FundFundMe, WithdrawFundMe} from "../../script/Interactions.s.sol";
-contract FundMeIntegration is Test {
-    FundMe fundMe;
+import {FundMe} from "../../src/FundMe.sol";
+import {Test, console} from "forge-std/Test.sol";
 
-    address USER = makeAddr("user");
-    uint256 constant GAS_PRICE = 1;
-    uint256 constant SEND_VALUE = 0.1 ether;
-    uint256 constant STARTING_BALANCE = 10 ether;
+contract InteractionsTest is Test {
+    FundMe public fundMe;
+    DeployFundMe deployFundMe;
+
+    uint256 public constant SEND_VALUE = 0.1 ether;
+    uint256 public constant STARTING_USER_BALANCE = 10 ether;
+
+    address alice = makeAddr("alice");
+
 
     function setUp() external {
-        DeployFundMe deploy = new DeployFundMe();
-        fundMe = deploy.run();
-        vm.deal(USER,STARTING_BALANCE);
+        deployFundMe = new DeployFundMe();
+        fundMe = deployFundMe.run();
+        vm.deal(alice, STARTING_USER_BALANCE);
     }
 
-    function testUserCanFundInteractions() public {
-        // FundFundMe fundFundMe = new FundFundMe();
-        // vm.prank(USER);
-        // vm.deal(USER, 1e18);
-        // fundFundMe.fundFundMe(address(fundMe));
+    function testUserCanFundAndOwnerWithdraw() public {
+        uint256 preUserBalance = address(alice).balance;
+        uint256 preOwnerBalance = address(fundMe.getOwner()).balance;
 
-        // address funder = fundMe.getFunder(0);
-        // assertEq(funder,USER);
-        FundFundMe fundFundMe = new FundFundMe();
-        fundFundMe.fundFundMe(address(fundMe));
+        // Using vm.prank to simulate funding from the USER address
+        vm.prank(alice);
+        fundMe.fund{value: SEND_VALUE}();
 
-        WithdrawFundMe.withdrawFundMe = new WithdrawFundMe();
+        WithdrawFundMe withdrawFundMe = new WithdrawFundMe();
         withdrawFundMe.withdrawFundMe(address(fundMe));
 
+        uint256 afterUserBalance = address(alice).balance;
+        uint256 afterOwnerBalance = address(fundMe.getOwner()).balance;
+
         assert(address(fundMe).balance == 0);
+        assertEq(afterUserBalance + SEND_VALUE, preUserBalance);
+        assertEq(preOwnerBalance + SEND_VALUE, afterOwnerBalance);
     }
+
 }
